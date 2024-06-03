@@ -1,38 +1,31 @@
-#include <Windows.h>
-#include <signal.h>
-#include <stdlib.h>
+#include <windows.h>
 #include "tiling.h"
 #include "error.h"
+#include "config.h"
 #include "keyboard.h"
 #include "messages.h" 
 #include "shared_mem.h"
 
-HMODULE wmDll;
-HHOOK hookShellProcHandle;
+#define EXIT_OK 0
+#define EXIT_FAILED 1
 
-void cleanupObjects()
+int WINAPI wWinMain(HINSTANCE instance, HINSTANCE prevInstance, PWSTR cmdLine, int cmdShow)
 {
-	cleanupKeyboard();
-	
-	if (hookShellProcHandle) {
-		UnhookWindowsHookEx(hookShellProcHandle);
+	int exitCode = EXIT_FAILED;
+
+	HMODULE wmDll;
+	HHOOK hookShellProcHandle;
+
+	HANDLE currentlyRunningMutex = CreateMutexW(NULL, TRUE, L"Global\\LightWMIsCurrentlyRunning");
+
+	if (currentlyRunningMutex == NULL) {
+		reportWin32Error(L"Failed creating currently running mutex");
+		goto cleanup;
+	} else if (GetLastError() == ERROR_ALREADY_EXISTS) {
+		reportGeneralError(L"LightWM is already running, exiting");
+		goto cleanup;
 	}
-	
-	if (wmDll) {
-		FreeLibrary(wmDll);
-	}
 
-	cleanupMemoryMapFile();
-}
-
-void ctrlc(int sig)
-{
-	cleanupObjects();
-	exit(ERROR_SUCCESS);
-}
-
-int main()
-{
     SetProcessDPIAware();
 
 	if (!initializeKeyboardConfig()) {
@@ -66,8 +59,6 @@ int main()
 		goto cleanup;
 	}
 
-	signal(SIGINT, ctrlc);
-
 	tileWindows();
 
 	MSG msg;
@@ -75,6 +66,11 @@ int main()
 	while (GetMessage(&msg, (HWND)-1, 0, 0) != 0) {
 		switch (msg.message) {
 			case WM_HOTKEY:
+				if (msg.wParam == QUIT_LIGHTWM_HOTKEY_ID) {
+					exitCode = EXIT_OK;
+					goto cleanup;
+				}
+
 				handleHotkey(msg.wParam, msg.lParam);
 				break; 
 			case LWM_WINDOW_EVENT:
@@ -84,7 +80,21 @@ int main()
 	}
 
 cleanup:
-	cleanupObjects();
+	if (currentlyRunningMutex != NULL) {
+		CloseHandle(currentlyRunningMutex);
+	}
+
+	cleanupKeyboard();
 	
-	return EXIT_FAILURE;
+	if (hookShellProcHandle) {
+		UnhookWindowsHookEx(hookShellProcHandle);
+	}
+	
+	if (wmDll) {
+		FreeLibrary(wmDll);
+	}
+
+	cleanupMemoryMapFile();
+	
+	return exitCode;
 }

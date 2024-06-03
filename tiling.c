@@ -1,6 +1,5 @@
 #include "tiling.h"
 #include "error.h"
-#include "debug.h"
 #include <Windows.h>
 
 HWND focusedWindow = 0;
@@ -46,12 +45,6 @@ BOOL CALLBACK EnumChildProc(HWND hwnd, LPARAM lparam)
 		return TRUE;
 	}
 
-	// temp
-	char theTitle[256] = {0};
-	GetWindowTextA(hwnd, theTitle, 256);
-	DEBUG_PRINT("title: %s\n", theTitle);
-	DEBUG_PRINT("style: %x\n", winInfo.dwExStyle);
-
 	managed[numOfManagedWindows] = hwnd;
 	numOfManagedWindows++;
 	return TRUE;
@@ -61,7 +54,7 @@ void tileWindows()
 {
 	numOfManagedWindows = 0;
 
-	if (focusedWindow == 0) {
+	if (focusedWindow == NULL) {
 		EnumChildWindows(GetDesktopWindow(), EnumChildProc, 0);
 	} else {
 		managed[numOfManagedWindows] = focusedWindow;
@@ -77,8 +70,8 @@ void tileWindows()
 
 void toggleFocusedWindow(HWND hwnd)
 {
-	if (focusedWindow != 0) {
-		focusedWindow = 0;
+	if (focusedWindow != NULL) {
+		focusedWindow = NULL;
 	} else {
 		focusedWindow = hwnd;
 	}
@@ -88,11 +81,15 @@ void toggleFocusedWindow(HWND hwnd)
 
 void focusNextWindow(bool goBack)
 {
+	if (focusedWindow != NULL) {
+		toggleFocusedWindow(NULL);
+	}
+
 	currentFocusedWindowIndex += goBack ? -1 : 1;
 
 	if (currentFocusedWindowIndex < 0) {
 		currentFocusedWindowIndex = numOfManagedWindows - 1;
-	} else if (currentFocusedWindowIndex == numOfManagedWindows) {
+	} else if (currentFocusedWindowIndex >= numOfManagedWindows) {
 		currentFocusedWindowIndex = 0;
 	}
 
