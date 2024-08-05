@@ -24,6 +24,8 @@ You can use ```alt+f``` hotkey to toggle fullscreen mode which will disable tili
 
 You can use ```alt+1``` up until ```alt+9``` to go to workspace number ```1``` until ```9``` respectively
 
+You can move the current focused window to a different workspace number by adding ```shift``` to the above command.
+
 ## Building
 
 You can build using the "x64 Native Tools Command Prompt for VS 2022" that comes with Microsoft Visual Studio Build Tools:
@@ -45,6 +47,10 @@ If you plan on adding a completely new feature, let's discuss it on the issues b
 Also notice that this project does not use any C library functions on purpose, only Windows API. This keeps everything as minimal as possible.
 
 ## Coding Conventions
+
+#### Spacing
+
+Tabs > Spaces
 
 #### Function and variable names
 
@@ -81,7 +87,7 @@ Example of when a comment is necessary and has added value:
 
 ```int*``` and not ```int *```
 
-#### For/while/switch/if blocks
+#### for/while/switch/if blocks
 
 Opening braces ```{``` in the same line as the block definition
 
@@ -97,6 +103,10 @@ if (cond)
 {
 }
 ```
+
+Space between the block name and the brackets
+
+```if (statement)``` and not ```if(statement)```
 
 #### Function blocks
 
@@ -114,9 +124,3 @@ and not:
 void init() {
 }
 ```
-
-#### For/while/switch/if blocks
-
-Space between the block name and the brackets
-
-```if (statement)``` and not ```if(statement)```
